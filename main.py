@@ -2157,25 +2157,23 @@ def graph_filters():
         MAX(porosity) AS max_porosity
     FROM tbl_coating""")
     coat_rows    = cur.fetchall()
-    gsm_min      = coat_rows[0]
-    gsm_max      = coat_rows[1]
-    porosity_min = coat_rows[2]
-    porosity_max = coat_rows[3]
+    r = coat_rows[0]
+    gsm_min, gsm_max, porosity_min, porosity_max = r[0], r[1], r[2], r[3]
 
     # --- Cell fields ---
     cur.execute("""
     SELECT
         electrolyte,
         MIN(formation_capacity) AS min_capacity,
-        MAX(formation_capacity) AS max_capacity
-        MIN(np_ratio) AS min_np_ratio
+        MAX(formation_capacity) AS max_capacity,
+        MIN(np_ratio) AS min_np_ratio,
         MAX(np_ratio) AS max_np_ratio
     FROM (
         SELECT electrolyte, formation_capacity, np_ratio FROM tbl_slp
         UNION ALL
-        SELECT electrolyte, formation_capacity FROM tbl_coincell
+        SELECT electrolyte, formation_capacity, NULL AS np_ratio FROM tbl_coincell
         UNION ALL
-        SELECT electrolyte, formation_capacity FROM tbl_mlp
+        SELECT electrolyte, formation_capacity, NULL AS np_ratio FROM tbl_mlp
     ) AS all_cells
     WHERE electrolyte IS NOT NULL
     GROUP BY electrolyte
@@ -2186,19 +2184,28 @@ def graph_filters():
     capacity_min = min([row[1] for row in cell_rows])
     capacity_max = max([row[2] for row in cell_rows])
     np_ratio_min = min([row[3] for row in cell_rows])
-    np_ratio_max = min([row[4] for row in cell_rows])
+    np_ratio_max = max([row[4] for row in cell_rows])
+
+    conn.close()
 
     return {
-        # Dropdown / checkbox options
-        "projects":     [r[0] for r in projects    if r[0]],
-        "chemistries":  [r[0] for r in chemistries if r[0]],
-        "suppliers":    [r[0] for r in suppliers   if r[0]],
-        "locations":    [r[0] for r in locations   if r[0]],
-        "electrolytes": [r[0] for r in electrolytes if r[0]],
+       
+        "projects":     [r for r in projects    if r],
 
-        # Slider ranges
-        "porosity": {"min": porosity_min, "max": porosity_max},
-        "weight":   {"min": gsm_min,   "max": gsm_max},
-        "capacity": {"min": capacity_min, "max": capacity_max},
-        "np_ratio": {"min": np_ratio_min, "max": np_ratio_max},
+        "material":{
+            "chemistry":  [r for r in chemistries if r],
+            "supplier":    [r for r in suppliers   if r],
+            "location":    [r for r in locations   if r]
+        },
+
+        "coating": {
+            "coat_weight_gsm":   {"min": gsm_min,   "max": gsm_max},
+            "porosity": {"min": porosity_min, "max": porosity_max}
+        },
+
+        "cell": {
+            "electrolyte": [r for r in electrolytes if r],
+            "capacity": {"min": capacity_min, "max": capacity_max},
+            "np_ratio": {"min": np_ratio_min, "max": np_ratio_max},
+        }
     }
