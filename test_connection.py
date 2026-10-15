@@ -1,8 +1,8 @@
 import psycopg2
 
 conn = psycopg2.connect(
-    dbname="bmac",
-    user="hazma",
+    dbname="hazbat",
+    user="ed_hzj",
     host="localhost"
 )
 

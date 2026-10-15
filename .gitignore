@@ -7,3 +7,8 @@ uploads/
 test_mpr.py
 *.session.sql
 local_data.sql
+testslp.csv
+testcoatings.csv
+testmaterials.csv
+testcoincells.csv
+test_connection.py
