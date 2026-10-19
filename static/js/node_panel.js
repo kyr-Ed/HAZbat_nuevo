@@ -67,12 +67,6 @@
             </div>
             <div>${rows}</div>
             <div class="metric-boxes">
-                <div class="metric-box carbon" title="Filled in once process-step data is recorded">
-                    <span class="metric-label">CO₂e</span><span class="metric-value">${show(p.kg_co2e, ' kg')}</span>
-                </div>
-                <div class="metric-box cost" title="Filled in once process-step data is recorded">
-                    <span class="metric-label">COST</span><span class="metric-value">${p.cost_gbp == null ? BLANK : '£' + esc(p.cost_gbp)}</span>
-                </div>
                 <div class="metric-box soh" title="Latest discharge capacity as a % of the first discharge (needs cycling data)">
                     <span class="metric-label">SOH</span><span class="metric-value" id="nodePanelSoh">${BLANK}</span>
                 </div>

@@ -14,9 +14,7 @@
     {% if steps %}<div class="lin-proc-steps">{{ steps }}</div>{% endif %}
     {% if extra %}<div class="lin-proc-extra">{{ extra }}</div>{% endif %}
     <div class="chips">
-        <span class="chip co2">{{ p.kg_co2e | dash }} kg CO₂e</span>
         <span class="chip energy">{{ p.energy_kwh | dash }} kWh</span>
-        <span class="chip cost">£{{ p.cost_gbp | dash }}</span>
         <span class="chip where">{{ p.location | dash }} · {{ p.date | dash }}{% if p.operator %} · {{ p.operator }}{% endif %}</span>
     </div>
 </div>
@@ -62,8 +60,6 @@
 
     <!-- Summary row -->
     <div class="kpi-grid">
-        <div class="kpi"><div class="kpi-label">COST</div><div class="kpi-value cost">{{ l.totals.cost_per_kwh | dash }}<small> £/kWh</small></div><div class="kpi-note">£{{ l.totals.cost_gbp | dash }} per cell</div></div>
-        <div class="kpi"><div class="kpi-label">CARBON</div><div class="kpi-value co2">{{ l.totals.kg_co2e_per_kwh | dash }}<small> kg CO₂e/kWh</small></div><div class="kpi-note">{{ l.totals.kg_co2e | dash }} kg per cell</div></div>
         <div class="kpi"><div class="kpi-label">PROCESS ENERGY</div><div class="kpi-value energy">{{ l.totals.energy_kwh | dash }}<small> kWh</small></div><div class="kpi-note">per cell</div></div>
         <div class="kpi"><div class="kpi-label">STATE OF HEALTH</div><div class="kpi-value"><span id="sohValue">—</span><small> %</small></div><div class="kpi-note" id="sohNote">{{ "loading cycling data…" if l.usage.cycling else "no cycling data" }}</div></div>
         <div class="kpi" title="Missing: {{ l.completeness.missing | join(', ') }}">
@@ -76,7 +72,7 @@
     <div class="lin-cols">
         <!-- LEFT -->
         <div class="lin-col">
-            <section class="result lin-box">
+            <section class="result lin-box grow">
                 <div class="lin-box-head">
                     <div>
                         <h2>Lineage</h2>
@@ -88,7 +84,7 @@
                     <span><i class="dot material"></i>Material</span>
                     <span><i class="dot coating"></i>Coating</span>
                     <span><i class="dot {{ l.record_type }}"></i>{{ type_labels[l.record_type] }}</span>
-                    <span class="co2-text">CO₂e</span><span class="energy-text">kWh</span><span class="cost-text">£</span>
+                    <span class="energy-text">kWh</span>
                     <span><b>M</b> measured · <b>E</b> estimated · <b>S</b> supplier</span>
                 </div>
 
@@ -101,7 +97,6 @@
                                 <div class="node-kind">MATERIAL · {{ b.role | upper }}</div>
                                 <div class="node-id"><a href="/card/{{ b.material.id if b.material else '' }}">{{ b.material.id if b.material else "?" }}</a></div>
                                 <div class="node-info">{{ (b.material.chemistry if b.material else None) | dash }} · {{ (b.material.supplier if b.material else None) | dash }}</div>
-                                <div class="node-co2">{{ (b.material.embodied_kg_co2e if b.material else None) | dash }} kg CO₂e embodied</div>
                             </div>
                         </div>
                         <div class="lin-line short"></div>
@@ -161,65 +156,9 @@
                 </div>
 
                 <div class="lin-totals">
-                    <div><div class="muted">Total along lineage</div><div class="co2-text big">{{ l.totals.kg_co2e | dash }} kg CO₂e</div></div>
-                    <div><div class="muted">Process energy</div><div class="energy-text big">{{ l.totals.energy_kwh | dash }} kWh</div></div>
-                    <div><div class="muted">Cost incl. materials</div><div class="cost-text big">£{{ l.totals.cost_gbp | dash }}</div></div>
+                    <div class="muted">Process energy along lineage</div>
+                    <div class="energy-text big">{{ l.totals.energy_kwh | dash }} kWh</div>
                 </div>
-            </section>
-
-            <section class="result lin-box">
-                <div class="section-title">PERFORMANCE &amp; DURABILITY</div>
-                {% if l.usage.cycling %}
-                <div class="perf">
-                    <div class="perf-chart"><canvas id="capacityChart" height="170"></canvas></div>
-                    <div class="perf-table">
-                        <div class="row"><span class="label">Rated capacity</span><span class="value">{{ r.get("Cell Capacity") | dash }}</span></div>
-                        <div class="row"><span class="label">Formation cap.</span><span class="value">{{ r.get("Formation Capacity") | dash }}</span></div>
-                        <div class="row"><span class="label">First discharge</span><span class="value" id="perfFirst">—</span></div>
-                        <div class="row"><span class="label">Latest discharge</span><span class="value" id="perfLatest">—</span></div>
-                        <div class="row"><span class="label">Avg. CE</span><span class="value" id="perfCe">—</span></div>
-                    </div>
-                </div>
-                <div class="vc">
-                    <div class="vc-head">
-                        <span class="vc-title">Voltage vs areal capacity</span>
-                        <label>Cycles
-                            <select id="vcCycles">
-                                <option value="1,2">1 &amp; 2</option>
-                                <option value="1,last">First &amp; last</option>
-                                <option value="1,2,3,4,5">First 5</option>
-                                <option value="all">All (up to 20)</option>
-                            </select>
-                        </label>
-                        <label>Electrode area
-                            <input id="vcArea" type="number" min="0" step="0.001" placeholder="cm²" inputmode="decimal"> cm²
-                        </label>
-                    </div>
-                    <div class="print-only muted small" id="vcPrintInfo"></div>
-                    <canvas id="voltageChart" height="230"></canvas>
-                    <div class="muted small" id="vcNote">Loading voltage curves…</div>
-                </div>
-                {% else %}
-                <p class="muted">No cycling data for this cell yet. <a href="/cycling/upload">Upload a BioLogic .mpr file</a> to see capacity, coulombic efficiency and state of health here.</p>
-                {% endif %}
-            </section>
-
-            <section class="result lin-box">
-                <div class="section-title">CIRCULARITY &amp; END OF LIFE</div>
-                <div class="row"><span class="label">Planned route</span><span class="value">{{ l.end_of_life.route | dash }}</span></div>
-                <div class="row"><span class="label">Second-life eligible</span><span class="value">{{ l.end_of_life.second_life_eligible | dash }}</span></div>
-                <div class="row"><span class="label">Hazardous substances</span><span class="value">—</span></div>
-                <div class="row"><span class="label">Recycler</span><span class="value">{{ l.end_of_life.recycler | dash }}</span></div>
-            </section>
-
-            <section class="result lin-box">
-                <div class="section-title">SUPPLY CHAIN DUE DILIGENCE</div>
-                {% for b in l.branches if b.material %}
-                <div class="row"><span class="label">{{ b.role }} supplier</span><span class="value">{{ b.material.supplier | dash }}</span></div>
-                {% endfor %}
-                <div class="row"><span class="label">Due-diligence status (OECD)</span><span class="value">—</span></div>
-                <div class="row"><span class="label">Mine origin (Co / Ni / Li)</span><span class="value">—</span></div>
-                <div class="row"><span class="label">Certificates / CoA</span><span class="value">—</span></div>
             </section>
         </div>
 
@@ -243,37 +182,6 @@
             </section>
 
             <section class="result lin-box">
-                <div class="section-head"><span class="section-title">COST</span><span class="cost-text">£{{ l.totals.cost_gbp | dash }} · {{ l.totals.cost_per_kwh | dash }} £/kWh</span></div>
-                <div class="row"><span class="label">Materials (bill of materials)</span><span class="value">—</span></div>
-                <div class="row"><span class="label">Electrodes</span><span class="value">—</span></div>
-                <div class="row"><span class="label">Assembly</span><span class="value">—</span></div>
-                <div class="row"><span class="label">Formation</span><span class="value">—</span></div>
-                <div class="muted small">Reference: pack ≈ $156/kWh (World Bank, 2020 data).</div>
-            </section>
-
-            <section class="result lin-box">
-                <div class="section-head"><span class="section-title">CARBON FOOTPRINT</span><span class="tag-warn">Not verified</span></div>
-                <div class="muted small">By EU life-cycle stage (kg CO₂e per cell)</div>
-                <div class="bar-row"><span>Raw materials</span><div class="bar"></div><b>—</b></div>
-                <div class="bar-row"><span>Main production</span><div class="bar"></div><b>—</b></div>
-                <div class="bar-row"><span>Distribution</span><div class="bar"></div><b>—</b></div>
-                <div class="bar-row"><span>End of life</span><div class="bar"></div><b>—</b></div>
-                <div class="muted small divider">Per kWh vs benchmarks (kg CO₂e/kWh)</div>
-                <div class="bar-row"><span><b>This cell</b></span><div class="bar"></div><b>—</b></div>
-                <div class="bar-row"><span>Industry 2018 (WEF)</span><div class="bar"><div class="fill grey" style="width: 100%"></div></div><b>138</b></div>
-                <div class="bar-row"><span>EU 2030 (WEF)</span><div class="bar"><div class="fill co2" style="width: 49%"></div></div><b>67</b></div>
-            </section>
-
-            <section class="result lin-box">
-                <div class="section-title">ENERGY &amp; UTILITIES</div>
-                <div class="row"><span class="label">Electricity, all processes</span><span class="value">{{ l.totals.energy_kwh | dash }}</span></div>
-                <div class="row"><span class="label">Dry room · drying</span><span class="value">—</span></div>
-                <div class="row"><span class="label">Grid carbon intensity</span><span class="value">—</span></div>
-                <div class="row"><span class="label">Solvent used · recovered</span><span class="value">—</span></div>
-                <div class="row"><span class="label">Process water</span><span class="value">—</span></div>
-            </section>
-
-            <section class="result lin-box">
                 <div class="section-title">MATERIAL INPUTS</div>
                 <div class="mat-table">
                     <div class="mat-head"><span>Material</span><span>Chemistry</span><span>Supplier</span><span>g</span></div>
@@ -288,11 +196,114 @@
                 <div class="rc-row"><span>Lithium</span><div class="bar"><i class="m31" style="left: 20%"></i><i class="m36" style="left: 40%"></i></div><b>— / 6 / 12%</b></div>
                 <div class="rc-row"><span>Nickel</span><div class="bar"><i class="m31" style="left: 20%"></i><i class="m36" style="left: 50%"></i></div><b>— / 6 / 15%</b></div>
             </section>
+
+            <section class="result lin-box grow">
+                <div class="section-title">ENERGY &amp; UTILITIES</div>
+                <div class="row"><span class="label">Electricity, all processes</span><span class="value">{{ l.totals.energy_kwh | dash }}</span></div>
+                <div class="row"><span class="label">Dry room · drying</span><span class="value">—</span></div>
+                <div class="row"><span class="label">Solvent used · recovered</span><span class="value">—</span></div>
+                <div class="row"><span class="label">Process water</span><span class="value">—</span></div>
+            </section>
         </div>
     </div>
 
+    <!-- Circularity and supply chain, side by side -->
+    <div class="lin-row2">
+        <section class="result lin-box">
+            <div class="section-title">CIRCULARITY &amp; END OF LIFE</div>
+            <div class="row"><span class="label">Planned route</span><span class="value">{{ l.end_of_life.route | dash }}</span></div>
+            <div class="row"><span class="label">Second-life eligible</span><span class="value">{{ l.end_of_life.second_life_eligible | dash }}</span></div>
+            <div class="row"><span class="label">Hazardous substances</span><span class="value">—</span></div>
+            <div class="row"><span class="label">Recycler</span><span class="value">{{ l.end_of_life.recycler | dash }}</span></div>
+        </section>
+
+        <section class="result lin-box">
+            <div class="section-title">SUPPLY CHAIN DUE DILIGENCE</div>
+            {% for b in l.branches if b.material %}
+            <div class="row"><span class="label">{{ b.role }} supplier</span><span class="value">{{ b.material.supplier | dash }}</span></div>
+            {% endfor %}
+            <div class="row"><span class="label">Due-diligence status (OECD)</span><span class="value">—</span></div>
+            <div class="row"><span class="label">Mine origin (Co / Ni / Li)</span><span class="value">—</span></div>
+            <div class="row"><span class="label">Certificates / CoA</span><span class="value">—</span></div>
+        </section>
+    </div>
+
+    <!-- Performance & durability: summary strip and a 2 x 2 grid of graphs -->
+    <div class="lin-section-head">
+        <h2>Performance &amp; durability</h2>
+        <span class="muted">{% if l.usage.cycling %}from {{ l.usage.cycling.filename }}{% else %}no cycling data yet{% endif %}</span>
+    </div>
+    <section class="result perf-stats">
+        <div class="perf-stat"><span>Rated capacity</span><b>{{ r.get("Cell Capacity") | dash }}</b></div>
+        <div class="perf-stat"><span>Formation cap.</span><b>{{ r.get("Formation Capacity") | dash }}</b></div>
+        <div class="perf-stat"><span>First discharge</span><b id="perfFirst">—</b></div>
+        <div class="perf-stat"><span>Latest discharge</span><b id="perfLatest">—</b></div>
+        <div class="perf-stat"><span>Avg. CE</span><b id="perfCe">—</b></div>
+    </section>
+
+    <div class="lin-graphs">
+        <section class="result lin-box graph-card">
+            <div class="graph-head"><span class="section-title">1 · DISCHARGE CAPACITY vs CYCLE</span></div>
+            {% if l.usage.cycling %}
+            <canvas id="capacityChart" height="230"></canvas>
+            {% else %}
+            <p class="muted graph-empty">No cycling data for this cell yet. <a href="/cycling/upload">Upload a BioLogic .mpr file</a> to see capacity, coulombic efficiency and state of health here.</p>
+            {% endif %}
+        </section>
+
+        <section class="result lin-box graph-card">
+            <div class="graph-head vc-head">
+                <span class="section-title">2 · VOLTAGE vs AREAL CAPACITY</span>
+                {% if l.usage.cycling %}
+                <label>Cycles
+                    <select id="vcCycles">
+                        <option value="1,2">1 &amp; 2</option>
+                        <option value="1,last">First &amp; last</option>
+                        <option value="1,2,3,4,5">First 5</option>
+                        <option value="all">All (up to 20)</option>
+                    </select>
+                </label>
+                <label>Area
+                    <input id="vcArea" type="number" min="0" step="0.001" placeholder="cm²" inputmode="decimal"> cm²
+                </label>
+                {% endif %}
+            </div>
+            {% if l.usage.cycling %}
+            <div class="print-only muted small" id="vcPrintInfo"></div>
+            <canvas id="voltageChart" height="230"></canvas>
+            <div class="muted small" id="vcNote">Loading voltage curves…</div>
+            {% else %}
+            <p class="muted graph-empty">Voltage curves appear here once a cycling file is uploaded.</p>
+            {% endif %}
+        </section>
+
+        <!-- Placeholder graphs: keep the 2 x 2 grid until we decide what goes here -->
+        <section class="result lin-box graph-card placeholder">
+            <div class="graph-head"><span class="section-title">3 · COULOMBIC EFFICIENCY vs CYCLE</span><span class="ph-pill">PLACEHOLDER</span></div>
+            <svg class="ph-axes" viewBox="0 0 440 230" aria-hidden="true">
+                <g class="ph-grid"><line x1="46" x2="425" y1="22" y2="22"/><line x1="46" x2="425" y1="62" y2="62"/><line x1="46" x2="425" y1="102" y2="102"/><line x1="46" x2="425" y1="142" y2="142"/><line x1="46" x2="425" y1="182" y2="182"/></g>
+                <path class="ph-axis" d="M46 12 V198 H425"/>
+                <path class="ph-curve" d="M50 175 C 70 60, 90 45, 140 40 S 300 30, 420 28"/>
+                <g class="ph-label"><text x="40" y="25" text-anchor="end">100</text><text x="40" y="105" text-anchor="end">95</text><text x="40" y="185" text-anchor="end">90</text>
+                <text x="46" y="212" text-anchor="middle">0</text><text x="235" y="212" text-anchor="middle">50</text><text x="425" y="212" text-anchor="middle">100</text>
+                <text x="235" y="227" text-anchor="middle">Cycle #</text><text x="12" y="105" text-anchor="middle" transform="rotate(-90 12 105)">CE / %</text></g>
+                <text class="ph-msg" x="235" y="115" text-anchor="middle">Uses existing cycling data — needs more cycles</text>
+            </svg>
+        </section>
+
+        <section class="result lin-box graph-card placeholder">
+            <div class="graph-head"><span class="section-title">4 · KEY GRAPH TBC</span><span class="ph-pill">PLACEHOLDER</span></div>
+            <svg class="ph-axes" viewBox="0 0 440 230" aria-hidden="true">
+                <path class="ph-axis" d="M46 12 V198 H425"/>
+                <g class="ph-label"><text x="235" y="227" text-anchor="middle">x-axis TBC</text><text x="12" y="105" text-anchor="middle" transform="rotate(-90 12 105)">y-axis TBC</text></g>
+                <text class="ph-msg" x="235" y="100" text-anchor="middle">Reserved for a future key graph</text>
+                <text class="ph-sub" x="235" y="120" text-anchor="middle">e.g. dQ/dV · rate capability · impedance</text>
+            </svg>
+        </section>
+    </div>
+
     <div class="print-only print-foot">
-        Source: {{ request.url }} · Values shown as “—” have not been recorded yet. Sample benchmarks: WEF (2019), EU Regulation 2023/1542.
+        Source: {{ request.url }} · Values shown as “—” have not been recorded yet. EU Regulation 2023/1542.
     </div>
 </div>
 

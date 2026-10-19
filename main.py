@@ -1540,9 +1540,6 @@ def card_data(record_id: str):
     if record and record_type in CELL_TYPES:
         panel = {
             "fields": panel_fields(cur, record_type, record),
-            # Filled in once process-step data exists (see lineage card plan)
-            "kg_co2e": None,
-            "cost_gbp": None,
             "qr_url": f"/qr/{record_id}.png",
             "card_url": f"/card/{record_id}",
             "lineage_url": f"/card/{record_id}/lineage",
@@ -1559,9 +1556,10 @@ def card_data(record_id: str):
 
 
 # --- Lineage & passport page ------------------------------------------------
-# Sustainability numbers are not recorded yet, so they stay None (shown as "—")
-# until process-step data is added to the database.
-EMPTY_PROCESS_METRICS = {"kg_co2e": None, "energy_kwh": None, "cost_gbp": None, "data_quality": None}
+# Process energy is not recorded yet, so it stays None (shown as "—") until
+# process-step data is added to the database. Cost and carbon are deliberately
+# not part of the passport: they need a proper study, not a rough estimate.
+EMPTY_PROCESS_METRICS = {"energy_kwh": None, "data_quality": None}
 
 
 def to_jsonable(value):
@@ -1605,7 +1603,7 @@ def coating_with_material(cur, coating_id: str):
         row = cur.fetchone()
         keys = ["chemistry", "supplier", "date_received", "quantity_kg", "location", "availability"]
         material = {"id": coating["material_id"], **(dict(zip(keys, row)) if row else {k: None for k in keys}),
-                    "embodied_kg_co2e": None, "recycled_content": None}
+                    "recycled_content": None}
 
     return {
         "role": electrode_role(coating["material_id"] or coating_id),
@@ -1653,8 +1651,7 @@ def build_lineage(cur, record_type: str, record_id: str):
                       **EMPTY_PROCESS_METRICS},
         "usage": {"type": "Testing" if cycling else None, "cycling": cycling},
         "end_of_life": {"route": None, "recycler": None, "second_life_eligible": None},
-        "totals": {"kg_co2e": None, "kg_co2e_per_kwh": None, "energy_kwh": None,
-                   "cost_gbp": None, "cost_per_kwh": None},
+        "totals": {"energy_kwh": None},
         "qr_url": f"/qr/{record_id}.png",
     }
 
@@ -1667,8 +1664,6 @@ def build_lineage(cur, record_type: str, record_id: str):
         "Date made": record.get("Date Made") is not None,
         "Project": record.get("Project") is not None,
         "Cycling data": cycling is not None,
-        "Carbon footprint": False,
-        "Cost": False,
         "Process energy": False,
         "Recycled content": False,
         "End-of-life route": False,
