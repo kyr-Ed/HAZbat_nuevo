@@ -36,7 +36,8 @@ INSERT INTO tbl_projects (project_name, active) VALUES
 
     CREATE TABLE tbl_slp (
     slp_id              TEXT PRIMARY KEY,
-    coating_id           TEXT NOT NULL REFERENCES tbl_coating(coating_id),
+    cat_coating_id           TEXT NOT NULL REFERENCES tbl_coating(coating_id),
+    an_coating_id            TEXT NOT NULL REFERENCES tbl_coating(coating_id),
     project               TEXT REFERENCES tbl_projects(project_name),
     date_made             DATE,
     made_by               TEXT,
@@ -48,7 +49,8 @@ INSERT INTO tbl_projects (project_name, active) VALUES
 
 CREATE TABLE tbl_coincell (
     coincell_id         TEXT PRIMARY KEY,
-    coating_id            TEXT NOT NULL REFERENCES tbl_coating(coating_id),
+    cat_coating_id            TEXT NOT NULL REFERENCES tbl_coating(coating_id),
+    an_coating_id             TEXT NOT NULL REFERENCES tbl_coating(coating_id),
     project                TEXT REFERENCES tbl_projects(project_name),
     date_made              DATE,
     made_by                TEXT,
